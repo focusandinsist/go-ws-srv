@@ -1,6 +1,9 @@
 package room
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 // RoomManager 管理多个房间
 type RoomManager struct {
@@ -32,7 +35,12 @@ func (rm *RoomManager) CreateRoom(name string) *Room {
 func (rm *RoomManager) GetRoom(name string) *Room {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
-	return rm.rooms[name]
+	room, ok := rm.rooms[name]
+	if !ok {
+		log.Println("房间不存在: roomname=", name)
+		return nil
+	}
+	return room
 }
 
 // DeleteRoom 删除房间

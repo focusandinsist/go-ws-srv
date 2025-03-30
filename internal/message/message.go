@@ -7,10 +7,11 @@ import "encoding/json"
 
 // Message 代表 WebSocket 消息
 type Message struct {
-	Type   string `json:"type"`    // 消息类型
-	UserID string `json:"user_id"` // 发送者 ID
-	RoomID string `json:"room_id"` // 房间 ID（可选）
-	Text   string `json:"text"`    // 消息内容
+	Type     string `json:"type"`        // 消息类型
+	SenderID string `json:"sender_id"`   // 发送者 ID
+	Receiver string `json:"receiver_id"` // 接收者 ID
+	RoomID   string `json:"room_id"`     // 房间 ID（可选）
+	Data     string `json:"data"`        // 消息内容
 }
 
 // ParseMessage 解析 JSON 消息

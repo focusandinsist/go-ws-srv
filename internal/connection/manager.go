@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	// "time"
 
-	"github.com/gorilla/websocket"
+	// "github.com/gorilla/websocket"
 )
 
-// Client 代表一个 WebSocket 连接
-type Client struct {
-	Conn   *websocket.Conn
-	UserID string
-}
+// // Client 代表一个 WebSocket 连接
+// type Client struct {
+// 	Conn     *websocket.Conn
+// 	UserID   string
+// 	lastPong time.Time
+// }
 
 // ConnectionManager 管理所有连接的 WebSocket 客户端
 type ConnectionManager struct {
@@ -100,3 +102,38 @@ func (cm *ConnectionManager) CloseAllConnections() {
 	}
 	clear(cm.clients) // 清空所有连接
 }
+
+// // StartHeartbeat 开启心跳检测：定期发送 ping 消息并更新 pong 响应时间
+// func (c *Client) StartHeartbeat() {
+// 	// 初始化 lastPong 为当前时间
+// 	c.lastPong = time.Now()
+
+// 	// 设置 pong 响应处理函数
+// 	c.Conn.SetPongHandler(func(appData string) error {
+// 		c.lastPong = time.Now()
+// 		return nil
+// 	})
+
+// 	// 每 30 秒发送一次 ping
+// 	ticker := time.NewTicker(30 * time.Second)
+// 	defer ticker.Stop()
+
+// 	for {
+// 		select {
+// 		case <-ticker.C:
+// 			// 如果超过 60 秒未收到 pong，认为连接已经断开
+// 			if time.Since(c.lastPong) > 60*time.Second {
+// 				log.Printf("Heartbeat timeout for client %s", c.UserID)
+// 				c.Conn.Close()
+// 				return
+// 			}
+
+// 			// 发送 ping 消息
+// 			if err := c.Conn.WriteMessage(websocket.PingMessage, []byte("ping")); err != nil {
+// 				log.Printf("Error sending ping to client %s: %v", c.UserID, err)
+// 				c.Conn.Close()
+// 				return
+// 			}
+// 		}
+// 	}
+// }

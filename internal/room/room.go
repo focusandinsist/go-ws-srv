@@ -19,6 +19,9 @@ func NewRoom(name string) *Room {
 
 // AddMember 添加成员到房间
 func (r *Room) AddMember(userID string) {
+	if r == nil {
+		return
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.Members = append(r.Members, userID)
@@ -26,6 +29,9 @@ func (r *Room) AddMember(userID string) {
 
 // RemoveMember 从房间移除成员
 func (r *Room) RemoveMember(userID string) {
+	if r == nil {
+		return
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i, member := range r.Members {

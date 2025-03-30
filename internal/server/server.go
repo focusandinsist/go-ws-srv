@@ -1,5 +1,5 @@
 // NewServer() 函数设计
-// 在 NewServer() 中，你可以进行这些组件的初始化：
+// 在 NewServer() 中，可以进行这些组件的初始化：
 // 创建并初始化 连接管理器（ConnectionManager）。
 // 创建 消息管理器（MessageManager）等其他功能模块。
 // 设置 WebSocket 服务器的事件处理逻辑，确保 WebSocket 的消息能够正确分发到相应的处理器。

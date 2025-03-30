@@ -22,7 +22,7 @@ func NewAuth() *Auth {
 // ValidateToken 验证 token 是否有效
 // 这里只是示例，实际应该解密并验证 token
 func (a *Auth) ValidateToken(token string) (bool, error) {
-	// 在实际应用中，你可以解密 token 或与数据库对比
+	// 在实际应用中，可以解密 token 或与数据库对比
 	if token == "" {
 		return false, errors.New("token is empty")
 	}
