@@ -8,29 +8,44 @@ import (
 	"net/http"
 
 	"websocket-server/internal/auth"
+	"websocket-server/internal/broker"
 	"websocket-server/internal/connection"
+	"websocket-server/internal/event"
 	"websocket-server/internal/message"
 	"websocket-server/internal/room"
+	"websocket-server/internal/storage"
 
 	"github.com/gorilla/websocket"
 )
 
 // Handler 处理 WebSocket 消息
 type Handler struct {
-	connMgr *connection.ConnectionManager
-	msgMgr  *message.MessageManager
-	roomMgr *room.RoomManager
-	authMgr *auth.AuthManager
+	connMgr      *connection.ConnectionManager
+	msgMgr       *message.MessageManager
+	roomMgr      *room.RoomManager
+	authMgr      *auth.AuthManager
+	kafkaBroker  *broker.KafkaBroker
+	redisStorage *storage.RedisStorage
+	eventMgr     *event.EventManager
 }
 
 // NewHandler 创建 Handler 实例
-func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageManager, authMgr *auth.AuthManager, roomMgr *room.RoomManager) *Handler {
+func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageManager, authMgr *auth.AuthManager, roomMgr *room.RoomManager, kafkaBroker *broker.KafkaBroker, redisStorage *storage.RedisStorage) *Handler {
+	eventMgr := event.NewEventManager()
 	return &Handler{
-		connMgr: connMgr,
-		msgMgr:  msgMgr,
-		roomMgr: roomMgr,
-		authMgr: authMgr,
+		connMgr:      connMgr,
+		msgMgr:       msgMgr,
+		roomMgr:      roomMgr,
+		authMgr:      authMgr,
+		kafkaBroker:  kafkaBroker,
+		redisStorage: redisStorage,
+		eventMgr:     eventMgr,
 	}
+}
+
+// RegisterEventHandler 注册事件处理器
+func (h *Handler) RegisterEventHandler(eventType string, handler func(*connection.Client, *message.Message)) {
+	h.eventMgr.Register(eventType, handler)
 }
 
 // HandleMessage 处理客户端发送的消息
@@ -41,18 +56,7 @@ func (h *Handler) HandleMessage(client *connection.Client, data []byte) {
 		return
 	}
 
-	// 可选：存储消息以便历史查询或离线消息处理
-	h.msgMgr.StoreMessage(msg)
-
-	switch msg.Type {
-	case "broadcast":
-		h.BroadcastMessage(msg)
-	case "direct":
-		h.SendDirectMessage(msg)
-	// 根据需要增加更多消息类型的处理
-	default:
-		log.Println("未知消息类型:", msg.Type)
-	}
+	h.eventMgr.Trigger(msg.Type, client, msg)
 }
 
 // HandleWebSocket 处理 WebSocket 请求
@@ -121,7 +125,7 @@ func (h *Handler) ReadPump(client *connection.Client) {
 }
 
 // Handler 中负责转发的部分：使用 ConnectionManager 来获取目标连接，然后发送消息
-func (h *Handler) BroadcastMessage(msg *message.Message) {
+func (h *Handler) BroadcastMessage(client *connection.Client, msg *message.Message) {
 	// 获取所有连接（这部分由 ConnectionManager 提供接口）
 	for _, client := range h.connMgr.GetAllClients() {
 		err := client.Conn.WriteMessage(websocket.TextMessage, []byte(msg.Data))
@@ -131,7 +135,7 @@ func (h *Handler) BroadcastMessage(msg *message.Message) {
 	}
 }
 
-func (h *Handler) SendDirectMessage(msg *message.Message) {
+func (h *Handler) SendDirectMessage(client *connection.Client, msg *message.Message) {
 	// 例如，假设 msg 中的 Data 或者另有字段指定接收者 ID
 	target := h.connMgr.GetClient(msg.Receiver)
 	if target == nil {

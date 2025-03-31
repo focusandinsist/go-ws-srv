@@ -13,19 +13,23 @@ import (
 	"time"
 
 	"websocket-server/internal/auth"
+	"websocket-server/internal/broker"
 	"websocket-server/internal/connection"
 	"websocket-server/internal/handler"
 	"websocket-server/internal/message"
 	"websocket-server/internal/room"
+	"websocket-server/internal/storage"
 )
 
 type Server struct {
-	connMgr *connection.ConnectionManager
-	msgMgr  *message.MessageManager
-	authMgr *auth.AuthManager
-	roomMgr *room.RoomManager
-	handler *handler.Handler
-	server  *http.Server
+	connMgr      *connection.ConnectionManager
+	msgMgr       *message.MessageManager
+	authMgr      *auth.AuthManager
+	roomMgr      *room.RoomManager
+	handler      *handler.Handler
+	server       *http.Server
+	kafkaBroker  *broker.KafkaBroker
+	redisStorage *storage.RedisStorage
 }
 
 func NewServer() *Server {
@@ -34,9 +38,18 @@ func NewServer() *Server {
 	msgMgr := message.NewMessageManager()
 	authMgr := auth.NewAuthManager()
 	roomMgr := room.NewRoomManager()
+	kafkaBroker, err := broker.NewKafkaBroker([]string{"localhost:9092"}, "websocket-messages")
+	if err != nil {
+		log.Fatalf("Failed to create Kafka broker: %v", err)
+	}
+	redisStorage := storage.NewRedisStorage("localhost:6379")
 
 	// 创建 WebSocket 处理器
-	wsHandler := handler.NewHandler(connMgr, msgMgr, authMgr, roomMgr)
+	wsHandler := handler.NewHandler(connMgr, msgMgr, authMgr, roomMgr, kafkaBroker, redisStorage)
+
+	// 注册事件处理器
+	wsHandler.RegisterEventHandler("broadcast", wsHandler.BroadcastMessage)
+	wsHandler.RegisterEventHandler("direct", wsHandler.SendDirectMessage)
 
 	// 创建 HTTP 服务器
 	server := &http.Server{
@@ -46,12 +59,14 @@ func NewServer() *Server {
 	}
 
 	return &Server{
-		connMgr: connMgr,
-		msgMgr:  msgMgr,
-		authMgr: authMgr,
-		roomMgr: roomMgr,
-		handler: wsHandler,
-		server:  server,
+		connMgr:      connMgr,
+		msgMgr:       msgMgr,
+		authMgr:      authMgr,
+		roomMgr:      roomMgr,
+		handler:      wsHandler,
+		server:       server,
+		kafkaBroker:  kafkaBroker,
+		redisStorage: redisStorage,
 	}
 }
 
