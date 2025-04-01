@@ -30,6 +30,7 @@ type Server struct {
 	server       *http.Server
 	kafkaBroker  *broker.KafkaBroker
 	redisStorage *storage.RedisStorage
+	mongoStorage *storage.MongoStorage
 }
 
 func NewServer() *Server {
@@ -43,9 +44,13 @@ func NewServer() *Server {
 		log.Fatalf("Failed to create Kafka broker: %v", err)
 	}
 	redisStorage := storage.NewRedisStorage("localhost:6379")
+	mongoStorage, err := storage.NewMongoStorage("mongodb://localhost:27017", "chatDB", "messages")
+	if err != nil {
+		log.Fatalf("Failed to create MongoDB storage: %v", err)
+	}
 
 	// 创建 WebSocket 处理器
-	wsHandler := handler.NewHandler(connMgr, msgMgr, authMgr, roomMgr, kafkaBroker, redisStorage)
+	wsHandler := handler.NewHandler(connMgr, msgMgr, authMgr, roomMgr, kafkaBroker, redisStorage, mongoStorage)
 
 	// 注册事件处理器
 	wsHandler.RegisterEventHandler("broadcast", wsHandler.BroadcastMessage)
@@ -67,6 +72,7 @@ func NewServer() *Server {
 		server:       server,
 		kafkaBroker:  kafkaBroker,
 		redisStorage: redisStorage,
+		mongoStorage: mongoStorage,
 	}
 }
 

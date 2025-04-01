@@ -27,10 +27,11 @@ type Handler struct {
 	kafkaBroker  *broker.KafkaBroker
 	redisStorage *storage.RedisStorage
 	eventMgr     *event.EventManager
+	mongoStorage *storage.MongoStorage
 }
 
 // NewHandler 创建 Handler 实例
-func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageManager, authMgr *auth.AuthManager, roomMgr *room.RoomManager, kafkaBroker *broker.KafkaBroker, redisStorage *storage.RedisStorage) *Handler {
+func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageManager, authMgr *auth.AuthManager, roomMgr *room.RoomManager, kafkaBroker *broker.KafkaBroker, redisStorage *storage.RedisStorage, mongoStorage *storage.MongoStorage) *Handler {
 	eventMgr := event.NewEventManager()
 	return &Handler{
 		connMgr:      connMgr,
@@ -40,6 +41,7 @@ func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageMa
 		kafkaBroker:  kafkaBroker,
 		redisStorage: redisStorage,
 		eventMgr:     eventMgr,
+		mongoStorage: mongoStorage,
 	}
 }
 
@@ -54,6 +56,17 @@ func (h *Handler) HandleMessage(client *connection.Client, data []byte) {
 	if err != nil {
 		log.Println("解析消息失败:", err)
 		return
+	}
+
+	// 存储消息到 MongoDB
+	h.mongoStorage.StoreMessage(msg)
+
+	// 将消息发送到 Kafka
+	h.kafkaBroker.SendMessage(msg.Data)
+
+	// 如果接收者不在线，存储到 Redis
+	if h.connMgr.GetClient(msg.Receiver) == nil {
+		h.redisStorage.AddOfflineMessage(msg.Receiver, msg.Data)
 	}
 
 	h.eventMgr.Trigger(msg.Type, client, msg)
@@ -164,4 +177,16 @@ func (h *Handler) RestoreClientState(client *connection.Client) {
 	// for _, m := range offlineMessages {
 	//     client.Conn.WriteMessage(websocket.TextMessage, m.Data)
 	// }
+
+	offlineMessages, err := h.redisStorage.GetOfflineMessages(client.UserID)
+	if err != nil {
+		log.Printf("Error getting offline messages for client %s: %v", client.UserID, err)
+		return
+	}
+
+	for _, msg := range offlineMessages {
+		client.SendMessage(websocket.TextMessage, []byte(msg))
+	}
+
+	h.redisStorage.ClearOfflineMessages(client.UserID)
 }
