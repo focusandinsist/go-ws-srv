@@ -8,7 +8,6 @@ import (
 	"log"
 	"sync"
 	// "time"
-
 	// "github.com/gorilla/websocket"
 )
 
@@ -103,37 +102,24 @@ func (cm *ConnectionManager) CloseAllConnections() {
 	clear(cm.clients) // 清空所有连接
 }
 
-// // StartHeartbeat 开启心跳检测：定期发送 ping 消息并更新 pong 响应时间
-// func (c *Client) StartHeartbeat() {
-// 	// 初始化 lastPong 为当前时间
-// 	c.lastPong = time.Now()
+// GetAllUserIDs 获取所有在线用户ID
+func (cm *ConnectionManager) GetAllUserIDs() []string {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	userIDs := make([]string, 0, len(cm.clients))
+	for id := range cm.clients {
+		userIDs = append(userIDs, id)
+	}
+	return userIDs
+}
 
-// 	// 设置 pong 响应处理函数
-// 	c.Conn.SetPongHandler(func(appData string) error {
-// 		c.lastPong = time.Now()
-// 		return nil
-// 	})
-
-// 	// 每 30 秒发送一次 ping
-// 	ticker := time.NewTicker(30 * time.Second)
-// 	defer ticker.Stop()
-
-// 	for {
-// 		select {
-// 		case <-ticker.C:
-// 			// 如果超过 60 秒未收到 pong，认为连接已经断开
-// 			if time.Since(c.lastPong) > 60*time.Second {
-// 				log.Printf("Heartbeat timeout for client %s", c.UserID)
-// 				c.Conn.Close()
-// 				return
-// 			}
-
-// 			// 发送 ping 消息
-// 			if err := c.Conn.WriteMessage(websocket.PingMessage, []byte("ping")); err != nil {
-// 				log.Printf("Error sending ping to client %s: %v", c.UserID, err)
-// 				c.Conn.Close()
-// 				return
-// 			}
-// 		}
-// 	}
-// }
+// SendMessageToUser 向指定用户发送消息
+func (cm *ConnectionManager) SendMessageToUser(userID string, data []byte) error {
+	cm.mu.Lock()
+	client, ok := cm.clients[userID]
+	cm.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("user %s not found", userID)
+	}
+	return client.SendMessage(1, data) // 你用的是 TextMessage 就写 1
+}

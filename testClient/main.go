@@ -13,13 +13,13 @@ import (
 type Message struct {
 	Type     string `json:"type"`        // 消息类型
 	SenderID string `json:"sender_id"`   // 发送者 ID
-	Receiver string `json:"receiver_id"` // 接收者 ID
+	Receiver string `json:"receiver_id"` // 接收者 ID（可选）
 	RoomID   string `json:"room_id"`     // 房间 ID（可选）
 	Data     string `json:"data"`        // 消息内容
+	AckID    string `json:"ack_id"`      // ACK ID（可选，用于接收时回传 ACK）
 }
 
 func main() {
-	// 连接到 WebSocket 服务端
 	serverURL := "ws://localhost:8080/ws" // WebSocket 服务器地址
 	conn, _, err := websocket.DefaultDialer.Dial(serverURL, nil)
 	if err != nil {
@@ -27,40 +27,60 @@ func main() {
 	}
 	defer conn.Close()
 
-	// 发送一条消息到服务器
+	// 初始发送一条消息
 	msg := &Message{
 		Type:     "broadcast",
 		SenderID: "LHM",
 		RoomID:   "123",
 		Data:     "Hello from client",
 	}
-	// 将结构体转换为 JSON 格式的 []byte
 	data, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("JSON 编码失败:", err)
 		return
 	}
-	// message := []byte("Hello from client")
 	err = conn.WriteMessage(websocket.TextMessage, data)
 	if err != nil {
 		log.Fatal("Write failed:", err)
 	}
 
-	// 接收服务器的消息
+	// 接收消息 + 自动 ACK
 	go func() {
 		for {
-			_, msg, err := conn.ReadMessage()
+			_, msgBytes, err := conn.ReadMessage()
 			if err != nil {
 				log.Fatal("Read failed:", err)
 				return
 			}
-			fmt.Printf("Received from srv: %s\n", string(msg))
+			fmt.Printf("Received from srv: %s\n", string(msgBytes))
+
+			var incoming Message
+			if err := json.Unmarshal(msgBytes, &incoming); err != nil {
+				fmt.Println("解码失败:", err)
+				continue
+			}
+
+			// 如果包含 ack_id，自动回 ACK
+			if incoming.AckID != "" {
+				ackMsg := &Message{
+					Type:     "__ack__",
+					SenderID: "LHM",          // 用同一个 sender
+					AckID:    incoming.AckID, // 原封不动回去
+				}
+				ackBytes, _ := json.Marshal(ackMsg)
+				err := conn.WriteMessage(websocket.TextMessage, ackBytes)
+				if err != nil {
+					fmt.Println("发送 ACK 失败:", err)
+				} else {
+					fmt.Printf("发送 ACK: %s\n", incoming.AckID)
+				}
+			}
 		}
 	}()
 
-	// 模拟持续发送消息
+	// 持续发送消息
 	for {
-		time.Sleep(5 * time.Second) // 每隔 5 秒发送一次消息
+		time.Sleep(5 * time.Second)
 
 		pingMsg := &Message{
 			Type:     "broadcast",
@@ -68,11 +88,10 @@ func main() {
 			RoomID:   "123",
 			Data:     "Ping",
 		}
-		// 将结构体转换为 JSON 格式的 []byte
 		data, err := json.Marshal(pingMsg)
 		if err != nil {
 			fmt.Println("JSON 编码失败:", err)
-			return
+			continue
 		}
 
 		err = conn.WriteMessage(websocket.TextMessage, data)

@@ -14,7 +14,9 @@ import (
 	"websocket-server/internal/message"
 	"websocket-server/internal/room"
 	"websocket-server/internal/storage"
+	"websocket-server/protocol"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -189,4 +191,48 @@ func (h *Handler) RestoreClientState(client *connection.Client) {
 	}
 
 	h.redisStorage.ClearOfflineMessages(client.UserID)
+}
+
+// 系统3的代码，似乎有点问题？
+func (h *Handler) OnMessage(c *connection.Client, rawData []byte) {
+	msg, err := protocol.Decode(rawData)
+	if err != nil {
+		log.Println("协议解析失败:", err)
+		return
+	}
+
+	// ack
+	if msg.Event == "__ack__" && msg.AckID != "" {
+		protocol.AckManager.Receive(msg.AckID)
+		return
+	}
+
+	switch msg.Event {
+	case "chat":
+		// 正常业务逻辑
+	}
+}
+
+// 系统3的代码，似乎有点问题？
+func (h *Handler) SendDirectMessage2(client *connection.Client, msg *message.Message) {
+	data := map[string]any{
+		"user": "tom",
+		"text": "hello",
+	}
+
+	// 生成 ackID 并发送消息
+	ackID := uuid.NewString()
+	msgByte, _ := protocol.Encode("chat", data, false, ackID)
+
+	// 注册 ack 等待
+	go func() {
+		_, err := protocol.AckManager.Wait()
+		if err != nil {
+			log.Printf("等待 ack 超时: %v", err)
+		} else {
+			log.Println("收到 ack 确认")
+		}
+	}()
+
+	client.SendMessage(websocket.TextMessage, msgByte)
 }

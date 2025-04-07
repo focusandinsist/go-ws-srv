@@ -19,6 +19,7 @@ import (
 	"websocket-server/internal/message"
 	"websocket-server/internal/room"
 	"websocket-server/internal/storage"
+	"websocket-server/internal/httpapi"
 )
 
 type Server struct {
@@ -74,10 +75,12 @@ func NewServer() *Server {
 		redisStorage: redisStorage,
 		mongoStorage: mongoStorage,
 	}
+
 }
 
 func (s *Server) Start(addr string) error {
 	http.HandleFunc("/ws", s.handler.HandleWebSocket)
+	httpapi.RunHTTPServer(s.connMgr)
 	s.server.Addr = addr
 	return s.server.ListenAndServe()
 }

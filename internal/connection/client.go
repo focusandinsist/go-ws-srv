@@ -10,10 +10,11 @@ import (
 
 // Client 代表单个 WebSocket 连接及其状态
 type Client struct {
-	Conn     *websocket.Conn // WebSocket 连接
-	UserID   string          // 用户 ID
-	lastPong time.Time       // 上次收到 pong 的时间
-	mu       sync.Mutex      // 保护并发写入和状态更新
+	Conn   *websocket.Conn // WebSocket 连接
+	UserID string          // 用户 ID
+
+	lastPong time.Time  // 上次收到 pong 的时间
+	mu       sync.Mutex // 保护并发写入和状态更新
 }
 
 // NewClient 创建一个新的 Client 实例

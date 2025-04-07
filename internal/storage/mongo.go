@@ -14,15 +14,17 @@ type MongoStorage struct {
 }
 
 func NewMongoStorage(uri, dbName, collectionName string) (*MongoStorage, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
 	}
 
+	// 确保连接成功
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err = client.Connect(ctx)
+	// 检查数据库连接
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -31,21 +33,21 @@ func NewMongoStorage(uri, dbName, collectionName string) (*MongoStorage, error) 
 	return &MongoStorage{client: client, collection: collection}, nil
 }
 
-func (ms *MongoStorage) StoreMessage(msg interface{}) error {
+func (ms *MongoStorage) StoreMessage(msg any) error {
 	_, err := ms.collection.InsertOne(context.Background(), msg)
 	return err
 }
 
-func (ms *MongoStorage) GetMessages(filter interface{}) ([]interface{}, error) {
+func (ms *MongoStorage) GetMessages(filter any) ([]any, error) {
 	cursor, err := ms.collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(context.Background())
 
-	var messages []interface{}
+	var messages []any
 	for cursor.Next(context.Background()) {
-		var msg interface{}
+		var msg any
 		if err := cursor.Decode(&msg); err != nil {
 			return nil, err
 		}
