@@ -6,11 +6,13 @@ import (
 )
 
 type Message struct {
-	Event     string          `json:"event"`
-	Namespace string          `json:"namespace,omitempty"` // 可选
-	Data      json.RawMessage `json:"data"`
-	Ack       bool            `json:"ack,omitempty"`
-	AckID     string          `json:"ack_id,omitempty"` // 用于确认机制
+	Event      string          `json:"event"`
+	Namespace  string          `json:"namespace,omitempty"` // 可选
+	Ack        bool            `json:"ack,omitempty"`
+	AckID      string          `json:"ack_id,omitempty"` // 用于确认机制
+	SenderID   string          `json:"sender_id,omitempty"`
+	ReceiverID string          `json:"receiver_id,omitempty"`
+	Data       json.RawMessage `json:"data"`
 }
 
 func Encode(event string, data any, ack bool, ackID string) ([]byte, error) {

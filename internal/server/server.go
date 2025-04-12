@@ -16,10 +16,10 @@ import (
 	"websocket-server/internal/broker"
 	"websocket-server/internal/connection"
 	"websocket-server/internal/handler"
+	"websocket-server/internal/httpapi"
 	"websocket-server/internal/message"
 	"websocket-server/internal/room"
 	"websocket-server/internal/storage"
-	"websocket-server/internal/httpapi"
 )
 
 type Server struct {
@@ -75,7 +75,6 @@ func NewServer() *Server {
 		redisStorage: redisStorage,
 		mongoStorage: mongoStorage,
 	}
-
 }
 
 func (s *Server) Start(addr string) error {

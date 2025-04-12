@@ -7,16 +7,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	// "time"
-	// "github.com/gorilla/websocket"
 )
-
-// // Client 代表一个 WebSocket 连接
-// type Client struct {
-// 	Conn     *websocket.Conn
-// 	UserID   string
-// 	lastPong time.Time
-// }
 
 // ConnectionManager 管理所有连接的 WebSocket 客户端
 type ConnectionManager struct {

@@ -1,8 +1,10 @@
 package message
 
+import "websocket-server/protocol"
+
 // MessageManager 负责消息管理
 type MessageManager struct {
-	messages []*Message
+	messages []*protocol.Message
 }
 
 // NewMessageManager 创建消息管理器
@@ -16,6 +18,6 @@ func (mm *MessageManager) Shutdown() {
 }
 
 // 可选：将消息存储到内部数组中
-func (mm *MessageManager) StoreMessage(msg *Message) {
+func (mm *MessageManager) StoreMessage(msg *protocol.Message) {
 	mm.messages = append(mm.messages, msg)
 }

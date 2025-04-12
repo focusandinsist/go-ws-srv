@@ -48,13 +48,13 @@ func NewHandler(connMgr *connection.ConnectionManager, msgMgr *message.MessageMa
 }
 
 // RegisterEventHandler 注册事件处理器
-func (h *Handler) RegisterEventHandler(eventType string, handler func(*connection.Client, *message.Message)) {
+func (h *Handler) RegisterEventHandler(eventType string, handler func(*connection.Client, *protocol.Message)) {
 	h.eventMgr.Register(eventType, handler)
 }
 
 // HandleMessage 处理客户端发送的消息
 func (h *Handler) HandleMessage(client *connection.Client, data []byte) {
-	msg, err := message.ParseMessage(data)
+	msg, err := protocol.Decode(data)
 	if err != nil {
 		log.Println("解析消息失败:", err)
 		return
@@ -64,14 +64,14 @@ func (h *Handler) HandleMessage(client *connection.Client, data []byte) {
 	h.mongoStorage.StoreMessage(msg)
 
 	// 将消息发送到 Kafka
-	h.kafkaBroker.SendMessage(msg.Data)
+	h.kafkaBroker.SendMessage(string(msg.Data))
 
 	// 如果接收者不在线，存储到 Redis
-	if h.connMgr.GetClient(msg.Receiver) == nil {
-		h.redisStorage.AddOfflineMessage(msg.Receiver, msg.Data)
+	if h.connMgr.GetClient(msg.ReceiverID) == nil {
+		h.redisStorage.AddOfflineMessage(msg.ReceiverID, string(msg.Data))
 	}
 
-	h.eventMgr.Trigger(msg.Type, client, msg)
+	h.eventMgr.Trigger(msg.Event, client, msg)
 }
 
 // HandleWebSocket 处理 WebSocket 请求
@@ -120,7 +120,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	go h.ReadPump(newClient)
 }
 
-// **新增 ReadPump，让它监听 WebSocket 消息，并调用 HandleMessage**
+// 新增 ReadPump，让它监听 WebSocket 消息，并调用 HandleMessage
 func (h *Handler) ReadPump(client *connection.Client) {
 	defer func() {
 		h.connMgr.RemoveClient(client)
@@ -134,13 +134,13 @@ func (h *Handler) ReadPump(client *connection.Client) {
 			break
 		}
 
-		// **收到消息后调用 HandleMessage**
+		// 收到消息后调用 HandleMessage
 		h.HandleMessage(client, msg)
 	}
 }
 
 // Handler 中负责转发的部分：使用 ConnectionManager 来获取目标连接，然后发送消息
-func (h *Handler) BroadcastMessage(client *connection.Client, msg *message.Message) {
+func (h *Handler) BroadcastMessage(client *connection.Client, msg *protocol.Message) {
 	// 获取所有连接（这部分由 ConnectionManager 提供接口）
 	for _, client := range h.connMgr.GetAllClients() {
 		err := client.Conn.WriteMessage(websocket.TextMessage, []byte(msg.Data))
@@ -150,11 +150,11 @@ func (h *Handler) BroadcastMessage(client *connection.Client, msg *message.Messa
 	}
 }
 
-func (h *Handler) SendDirectMessage(client *connection.Client, msg *message.Message) {
+func (h *Handler) SendDirectMessage(client *connection.Client, msg *protocol.Message) {
 	// 例如，假设 msg 中的 Data 或者另有字段指定接收者 ID
-	target := h.connMgr.GetClient(msg.Receiver)
+	target := h.connMgr.GetClient(msg.ReceiverID)
 	if target == nil {
-		log.Printf("找不到目标用户: %s", msg.Receiver)
+		log.Printf("找不到目标用户: %s", msg.ReceiverID)
 		return
 	}
 
@@ -214,7 +214,7 @@ func (h *Handler) OnMessage(c *connection.Client, rawData []byte) {
 }
 
 // 系统3的代码，似乎有点问题？
-func (h *Handler) SendDirectMessage2(client *connection.Client, msg *message.Message) {
+func (h *Handler) SendDirectMessage2(client *connection.Client, msg *protocol.Message) {
 	data := map[string]any{
 		"user": "tom",
 		"text": "hello",

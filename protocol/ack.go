@@ -17,6 +17,7 @@ type ackManager struct {
 	mu   sync.Mutex
 	acks map[string]*ackEntry
 	ttl  time.Duration
+	// acks sync.Map // key: string -> chan *Message // TODO 这个是合理方案
 }
 
 var AckManager = NewAckManager(5 * time.Second)
