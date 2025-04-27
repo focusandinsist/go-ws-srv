@@ -12,14 +12,14 @@ import (
 	"net/http"
 	"time"
 
-	"websocket-server/internal/auth"
-	"websocket-server/internal/broker"
-	"websocket-server/internal/connection"
-	"websocket-server/internal/handler"
-	"websocket-server/internal/httpapi"
-	"websocket-server/internal/message"
-	"websocket-server/internal/room"
-	"websocket-server/internal/storage"
+	"go-ws-srv/internal/auth"
+	"go-ws-srv/internal/broker"
+	"go-ws-srv/internal/connection"
+	"go-ws-srv/internal/handler"
+	"go-ws-srv/internal/httpapi"
+	"go-ws-srv/internal/message"
+	"go-ws-srv/internal/room"
+	"go-ws-srv/internal/storage"
 )
 
 type Server struct {

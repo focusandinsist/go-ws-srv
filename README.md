@@ -6,7 +6,7 @@ a:那垃圾socketIo频繁更新还版本不兼容，谁用谁sb
 这里是 WebSocket 推送系统 的 文件架构设计，按照 清晰的模块划分，保证 高并发、可扩展、分布式支持，目标是 Socket.IO 替代品。
 
 📂 文件结构
-websocket-server/
+go-ws-srv/
 │── cmd/                  # 入口目录
 │   ├── main.go           # 启动 WebSocket 服务器
 │

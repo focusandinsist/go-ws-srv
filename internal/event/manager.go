@@ -3,8 +3,8 @@ package event
 import (
 	"sync"
 
-	"websocket-server/internal/connection"
-	"websocket-server/protocol"
+	"go-ws-srv/internal/connection"
+	"go-ws-srv/protocol"
 )
 
 // EventManager 事件管理器

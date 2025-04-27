@@ -1,4 +1,4 @@
-module websocket-server
+module go-ws-srv
 
 go 1.23
 
