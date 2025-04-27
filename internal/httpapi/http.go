@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"websocket-server/internal/connection"
+	"go-ws-srv/internal/connection"
 
 	"github.com/gin-gonic/gin"
 )

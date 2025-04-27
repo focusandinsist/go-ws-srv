@@ -1,6 +1,6 @@
 package message
 
-import "websocket-server/protocol"
+import "go-ws-srv/protocol"
 
 // MessageManager 负责消息管理
 type MessageManager struct {

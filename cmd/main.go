@@ -1,6 +1,6 @@
 package main
 
-import "websocket-server/internal/server"
+import "go-ws-srv/internal/server"
 
 func main() {
 	srv := server.NewServer()
