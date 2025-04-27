@@ -1,6 +1,6 @@
 package main
 
-import "go-ws-srv/internal/server"
+import "github.com/focusandinsist/go-ws-srv/internal/server"
 
 func main() {
 	srv := server.NewServer()

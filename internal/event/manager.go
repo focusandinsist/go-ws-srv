@@ -3,8 +3,8 @@ package event
 import (
 	"sync"
 
-	"go-ws-srv/internal/connection"
-	"go-ws-srv/protocol"
+	"github.com/focusandinsist/go-ws-srv/internal/connection"
+	"github.com/focusandinsist/go-ws-srv/protocol"
 )
 
 // EventManager 事件管理器
