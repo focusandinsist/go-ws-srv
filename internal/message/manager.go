@@ -1,6 +1,6 @@
 package message
 
-import "go-ws-srv/protocol"
+import "github.com/focusandinsist/go-ws-srv/protocol"
 
 // MessageManager 负责消息管理
 type MessageManager struct {

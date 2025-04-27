@@ -12,14 +12,14 @@ import (
 	"net/http"
 	"time"
 
-	"go-ws-srv/internal/auth"
-	"go-ws-srv/internal/broker"
-	"go-ws-srv/internal/connection"
-	"go-ws-srv/internal/handler"
-	"go-ws-srv/internal/httpapi"
-	"go-ws-srv/internal/message"
-	"go-ws-srv/internal/room"
-	"go-ws-srv/internal/storage"
+	"github.com/focusandinsist/go-ws-srv/internal/auth"
+	"github.com/focusandinsist/go-ws-srv/internal/broker"
+	"github.com/focusandinsist/go-ws-srv/internal/connection"
+	"github.com/focusandinsist/go-ws-srv/internal/handler"
+	"github.com/focusandinsist/go-ws-srv/internal/httpapi"
+	"github.com/focusandinsist/go-ws-srv/internal/message"
+	"github.com/focusandinsist/go-ws-srv/internal/room"
+	"github.com/focusandinsist/go-ws-srv/internal/storage"
 )
 
 type Server struct {

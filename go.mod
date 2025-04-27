@@ -1,4 +1,4 @@
-module go-ws-srv
+module github.com/focusandinsist/go-ws-srv
 
 go 1.23
 
