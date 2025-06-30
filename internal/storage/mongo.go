@@ -9,10 +9,12 @@ import (
 )
 
 type MongoStorage struct {
-	client     *mongo.Client
-	collection *mongo.Collection
+	dbName string
+	client *mongo.Client
+	// collection *mongo.Collection
 }
 
+// 新建个表
 func NewMongoStorage(uri, dbName, collectionName string) (*MongoStorage, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	if err != nil {
@@ -29,17 +31,24 @@ func NewMongoStorage(uri, dbName, collectionName string) (*MongoStorage, error) 
 		return nil, err
 	}
 
-	collection := client.Database(dbName).Collection(collectionName)
-	return &MongoStorage{client: client, collection: collection}, nil
+	// collection := client.Database(dbName).Collection(collectionName)
+	return &MongoStorage{client: client, dbName: dbName}, nil
 }
 
-func (ms *MongoStorage) StoreMessage(msg any) error {
-	_, err := ms.collection.InsertOne(context.Background(), msg)
+// 获取集合
+func (ms *MongoStorage) Collection(name string) *mongo.Collection {
+	return ms.client.Database(ms.dbName).Collection(name)
+}
+
+// 存储数据
+func (ms *MongoStorage) StoreMessage(collection string, msg any) error {
+	_, err := ms.Collection(collection).InsertOne(context.Background(), msg)
 	return err
 }
 
-func (ms *MongoStorage) GetMessages(filter any) ([]any, error) {
-	cursor, err := ms.collection.Find(context.Background(), filter)
+// GetMessages 根据条件获取消息
+func (ms *MongoStorage) GetMessages(collection string, filter any) ([]any, error) {
+	cursor, err := ms.Collection(collection).Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}

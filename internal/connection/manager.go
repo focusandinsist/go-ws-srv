@@ -11,14 +11,14 @@ import (
 
 // ConnectionManager 管理所有连接的 WebSocket 客户端
 type ConnectionManager struct {
-	clients map[string]*Client
+	clients map[int64]*Client // map<userID, client>
 	mu      sync.Mutex
 }
 
 // NewConnectionManager 创建连接管理器
 func NewConnectionManager() *ConnectionManager {
 	return &ConnectionManager{
-		clients: make(map[string]*Client),
+		clients: make(map[int64]*Client),
 	}
 }
 
@@ -37,7 +37,7 @@ func (cm *ConnectionManager) RemoveClient(client *Client) {
 }
 
 // GetClient 获取特定用户的连接
-func (cm *ConnectionManager) GetClient(userID string) *Client {
+func (cm *ConnectionManager) GetClient(userID int64) *Client {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	return cm.clients[userID]
@@ -56,7 +56,7 @@ func (cm *ConnectionManager) GetAllClients() []*Client {
 }
 
 // CloseConnection 关闭单个连接
-func (cm *ConnectionManager) CloseConnection(userID string) error {
+func (cm *ConnectionManager) CloseConnection(userID int64) error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
@@ -75,7 +75,7 @@ func (cm *ConnectionManager) CloseConnection(userID string) error {
 
 	// 移除该连接
 	delete(cm.clients, userID)
-	log.Printf("Connection closed: %s", userID)
+	log.Printf("Connection closed: %d", userID)
 	return nil
 }
 
@@ -93,11 +93,11 @@ func (cm *ConnectionManager) CloseAllConnections() {
 	clear(cm.clients) // 清空所有连接
 }
 
-// GetAllUserIDs 获取所有在线用户ID
-func (cm *ConnectionManager) GetAllUserIDs() []string {
+// GetAllOnlineUserIDs 获取所有在线用户ID
+func (cm *ConnectionManager) GetAllOnlineUserIDs() []int64 {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
-	userIDs := make([]string, 0, len(cm.clients))
+	userIDs := make([]int64, 0, len(cm.clients))
 	for id := range cm.clients {
 		userIDs = append(userIDs, id)
 	}
@@ -105,12 +105,12 @@ func (cm *ConnectionManager) GetAllUserIDs() []string {
 }
 
 // SendMessageToUser 向指定用户发送消息
-func (cm *ConnectionManager) SendMessageToUser(userID string, data []byte) error {
+func (cm *ConnectionManager) SendMessageToUser(userID int64, data []byte) error {
 	cm.mu.Lock()
 	client, ok := cm.clients[userID]
 	cm.mu.Unlock()
 	if !ok {
-		return fmt.Errorf("user %s not found", userID)
+		return fmt.Errorf("user %d not found", userID)
 	}
 	return client.SendMessage(1, data) // 你用的是 TextMessage 就写 1
 }

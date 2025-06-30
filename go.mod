@@ -1,4 +1,4 @@
-module github.com/focusandinsist/go-ws-srv
+module websocket-server
 
 go 1.23
 
@@ -8,9 +8,11 @@ require (
 	github.com/IBM/sarama v1.45.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	go.mongodb.org/mongo-driver v1.17.3
+	google.golang.org/protobuf v1.34.1
 )
 
 require (
@@ -64,6 +66,5 @@ require (
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

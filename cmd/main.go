@@ -1,8 +1,18 @@
 package main
 
-import "github.com/focusandinsist/go-ws-srv/internal/server"
+import (
+	"websocket-server/httpapi"
+	"websocket-server/server"
+	"websocket-server/service"
+)
+
+var serv *server.Server
 
 func main() {
-	srv := server.NewServer()
-	srv.Start(":8080")
+	serv = server.NewServer()
+
+	s := service.NewService()
+	// 初始化路由
+	httpapi.Init(s)
+	serv.Start(":8080")
 }
